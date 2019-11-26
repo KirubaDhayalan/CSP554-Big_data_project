@@ -99,4 +99,67 @@ with open('one_tweet.json', 'w') as f:
 
 tokens_df = get_tokens(friends_tweets)
 
+print(tokens)
 
+tokens_lst=[]
+for i in tokens.index:
+        tns = tokens.loc[i]['tokens']
+        tokens_lst.append(tns)
+print(tokens_lst)
+
+dictionary = Dictionary(tokens_lst)
+corpus = []
+for i in tokens_lst:
+    corpus.append(dictionary.doc2bow(i))
+print(corpus)
+
+#file_path_corpus = "/Users/manukarreddy/Desktop/kiruba_python/mkbhd"
+lda = LdaModel.load("/Users/manukarreddy/Desktop/kiruba_python/mkbhdtfidf_modelfinal_lda")
+#corpus = MmCorpus"))
+
+#mkbhd_file_path_corpus = "/Users/manukarreddy/Desktop/kiruba_python/mkbhd"
+mkbhd_corpus = MmCorpus("/Users/manukarreddy/Desktop/kiruba_python/mkbhdmkbhd.mm")
+
+doc_topic_dist = np.asarray([[tup[1] for tup in lst] for lst in lda[corpus]])
+#doc_topic_dist.shape
+
+x = lda[corpus]
+#print(x[0])
+new_doc_distribution= []
+for i in range(len(x)):
+    new_doc_distribution.append(x[i][1])
+new_doc_distribution = np.asarray(new_doc_distribution)
+
+top = lda.get_document_topics(bow=corpus)
+#print('\n',top[1],'\n\n',top[2])
+doc_distribution = np.asarray([tup[0] for tup in lda.get_document_topics(bow=mkbhd_corpus)])
+
+def jensen_shannon(query, matrix):
+    """
+    This function implements a Jensen-Shannon similarity
+    between the input query (an LDA topic distribution for a document)
+    and the entire corpus of topic distributions.
+    It returns an array of length M where M is the number of documents in the corpus
+    """
+    # lets keep with the p,q notation above
+    p = query[None,:].T # take transpose
+    q = matrix.T # transpose matrix
+    m = 0.5*(p + q)
+    return np.sqrt(0.5*(entropy(p,m) + entropy(q,m)))
+
+def get_most_similar_documents(query,matrix,k=10):
+    """
+    This function implements the Jensen-Shannon distance above
+    and retruns the top k indices of the smallest jensen shannon distances
+    """
+    sims = jensenshannon(query,matrix) # list of jensen shannon distances
+    return sims.argsort()[:k] # the top k positional index of the smallest Jensen Shannon distances
+
+
+scores = []
+for i in range(len(doc_topic_dist)):
+    scores.append(jensenshannon(new_doc_distribution,doc_topic_dist[i]))
+
+friends_tweets['similarity'] = scores
+friends_tweets.sort_values(by='similarity', ascending=False)
+print(friends_tweets[:100])
