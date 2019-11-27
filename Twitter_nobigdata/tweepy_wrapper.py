@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[38]:
-
-
 from tweepy import OAuthHandler
 import json
 import configparser
@@ -12,7 +6,6 @@ import tweepy
 import pickle
 import json
 import os
-import time
 from tweepy.models import Status, ResultSet
 import re
 
@@ -57,17 +50,6 @@ def get_deg2_users(friends, count):
             continue
     return list(friendsd2)
 
-def get_tweets(user,count = None):
-    #view_rate_limits()
-    final = [] #can change to resultset later if I want
-
-    try:
-        for status in tweepy.Cursor(api.user_timeline, screen_name =user, tweet_mode = "extended", count = count).items(count):
-            final.append(status._json['full_text'])
-    except Exception as e:
-        print("{} is a protected user!")
-        return []
-    return final
 
 def extract_text(tweet):
     if type(tweet) != Status:
@@ -124,6 +106,31 @@ def extract_hashtags(tweet):
             print("No entity method!")
         return hashtags
 
+def main_tweets(user):
+    m_tweets =dict()
+    m_tweets[user] = {"text":[] , "mentions":[] , "hashtags" :[] }
+    tweets = []
+    try:
+        for status in tweepy.Cursor(api.user_timeline, screen_name =user, tweet_mode = "extended", include_rts=False).items():
+            tweets.append(status)
+        for tweet in tweets:
+            text = extract_text(tweet) 
+            hashtags = extract_hashtags(tweet) 
+            mentions = extract_mentions(tweet)
+            m_tweets[user]["text"].append(text)
+            m_tweets[user]["hashtags"].append(hashtags)
+            m_tweets[user]["mentions"].append(mentions)
+    except Exception as e:
+        if (str(e) == "Twitter error response: status code = 401"):
+            print("user is protected")
+            tweets = []
+        elif (str(e) == "Twitter error response: status code = 404"):
+            print("user is not found")
+            tweets = []
+        else:
+            print(str(e))
+    print("Finished Getting tweets....")
+    return m_tweets
 
 def fetch_tweets(users):
     friends_tweets = dict()
@@ -161,5 +168,11 @@ def fetch_tweets(users):
     print("Number of protected users: ",protected)
     print("Number of accounts not found: ", not_found)
     return friends_tweets, protected, not_found
-    
 
+def save_json(file, name, path):
+    with open(path+"{}.mm".format(name), 'w') as fp:
+        json.dump(file, fp)
+        
+def save_pkl(file, name, path):
+    with open(path+"{}.mm".format(name), 'wb') as f:
+        pickle.dump(file, f)

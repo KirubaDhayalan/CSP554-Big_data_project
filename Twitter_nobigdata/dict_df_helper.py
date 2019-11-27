@@ -28,7 +28,7 @@ def filtration(dataframe, column):
             tweet = tweet.lower()
             clean = [x for x in tweet.split() if x not in string.punctuation]
             clean = [x for x in clean if x not in nltk_stopwords]
-            clean = re.sub(r'\b\w{1,3}\b', '', clean)
+            #clean = re.sub(r'\b\w{1,3}\b', '', clean)
             clean = [x for x in clean if "@" not in x]
             clean = [x for x in clean if "…" not in x]
             clean = [x for x in clean if x[0] not in string.digits]
